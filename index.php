@@ -20,16 +20,7 @@ header('Content-Type: text/html; charset=' . $CHARSET);
 	<div id="innertext">
 		<div class="lang en">
 			<h1>Welcome</h1>
-			<p>This data portal has been established to promote collaborative... Replace with introductory text in English.
-			If the portal is not meant to be multilingual, remove the unneeded language sections</p>
-		</div>
-		<div class="lang es">
-			<h1 class="headline">Bienvenidos</h1>
-			<p>Este portal de datos se ha establecido para promover la colaboración... Reemplazar con texto introductorio en inglés</p>
-		</div>
-		<div class="lang fr">
-			<h1 class="headline">Bienvenue</h1>
-			<p>Ce portail de données a été créé pour promouvoir la collaboration... Remplacer par le texte d'introduction en anglais</p>
+			<p>This data portal has been established to provide access to plant specimens from the Philippines.</p>
 		</div>
 	</div>
 	<?php
