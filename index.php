@@ -20,7 +20,7 @@ header('Content-Type: text/html; charset=' . $CHARSET);
 	<div id="innertext">
 		<div class="lang en">
 			<h1>Welcome</h1>
-			<p>This data portal has been established to provide access to plant specimens from the Philippines.</p>
+			<p>This data portal has been established to provide access to specimens generated or made available through the Plants and Lichens of the Southern Philippines project.</p>
 		</div>
 	</div>
 	<?php
