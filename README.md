@@ -1,1 +1,1 @@
-This fork of the Symbiota code provides customization for the Philippine Plant Portal in collaboration with the Biodiversity Knowledge Integration Center (BioKIC, https://github.com/BioKIC) development team at Arizona State University. 
+This fork of the Symbiota code provides customization for the Plants and Lichens of the Southern Philippines project in collaboration with the Biodiversity Knowledge Integration Center (BioKIC, https://github.com/BioKIC) development team at Arizona State University. 
