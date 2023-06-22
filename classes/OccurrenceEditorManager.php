@@ -119,24 +119,7 @@ class OccurrenceEditorManager {
 			if(array_key_exists('q_recordedby',$_REQUEST) && $_REQUEST['q_recordedby']) $this->qryArr['rb'] = trim($_REQUEST['q_recordedby']);
 			if(array_key_exists('q_recordnumber',$_REQUEST) && $_REQUEST['q_recordnumber']) $this->qryArr['rn'] = trim($_REQUEST['q_recordnumber']);
 			if(array_key_exists('q_eventdate',$_REQUEST) && $_REQUEST['q_eventdate']) $this->qryArr['ed'] = trim($_REQUEST['q_eventdate']);
-
-			// Check for a useraction (editedby or modifiedby)
-			if(array_key_exists('useraction',$_REQUEST) && $_REQUEST['useraction']) {
-
-				$this->qryArr['useraction'] = $_REQUEST['useraction'];
-
-				// Check if a username was specified
-				if(array_key_exists('q_user',$_REQUEST) && $_REQUEST['q_user']) {
-
-					// Get the username
-					$user = trim($_REQUEST['q_user']);
-
-					// If a username was specified save it to either recordeditedby or recordmodifiedby
-					if($_REQUEST['useraction'] == 'enteredby') $this->qryArr['eb'] = $user;
-					if($_REQUEST['useraction'] == 'modifiedby') $this->qryArr['mb'] = $user;
-				}
-			}
-
+			if(array_key_exists('q_recordenteredby',$_REQUEST) && $_REQUEST['q_recordenteredby']) $this->qryArr['eb'] = trim($_REQUEST['q_recordenteredby']);
 			if(array_key_exists('q_returnall',$_REQUEST) && is_numeric($_REQUEST['q_returnall'])) $this->qryArr['returnall'] = $_REQUEST['q_returnall'];
 			if(array_key_exists('q_processingstatus',$_REQUEST) && $_REQUEST['q_processingstatus']) $this->qryArr['ps'] = trim($_REQUEST['q_processingstatus']);
 			if(array_key_exists('q_datelastmodified',$_REQUEST) && $_REQUEST['q_datelastmodified']) $this->qryArr['dm'] = trim($_REQUEST['q_datelastmodified']);
@@ -145,12 +128,12 @@ class OccurrenceEditorManager {
 			if(array_key_exists('q_ocrfrag',$_REQUEST) && $_REQUEST['q_ocrfrag']) $this->qryArr['ocr'] = trim($_REQUEST['q_ocrfrag']);
 			if(array_key_exists('q_imgonly',$_REQUEST) && $_REQUEST['q_imgonly']) $this->qryArr['io'] = 1;
 			if(array_key_exists('q_withoutimg',$_REQUEST) && $_REQUEST['q_withoutimg']) $this->qryArr['woi'] = 1;
-			for($x=1;$x<9;$x++){
+			for($x=1; $x<9; $x++){
 				if(array_key_exists('q_customandor'.$x,$_REQUEST) && $_REQUEST['q_customandor'.$x]) $this->qryArr['cao'.$x] = $_REQUEST['q_customandor'.$x];
                 if(array_key_exists('q_customopenparen'.$x,$_REQUEST) && $_REQUEST['q_customopenparen'.$x]) $this->qryArr['cop'.$x] = $_REQUEST['q_customopenparen'.$x];
 				if(array_key_exists('q_customfield'.$x,$_REQUEST) && $_REQUEST['q_customfield'.$x]) $this->qryArr['cf'.$x] = $_REQUEST['q_customfield'.$x];
 				if(array_key_exists('q_customtype'.$x,$_REQUEST) && $_REQUEST['q_customtype'.$x]) $this->qryArr['ct'.$x] = $_REQUEST['q_customtype'.$x];
-				if(array_key_exists('q_customvalue'.$x,$_REQUEST) && $_REQUEST['q_customvalue'.$x]) $this->qryArr['cv'.$x] = trim($_REQUEST['q_customvalue'.$x]);
+				if(array_key_exists('q_customvalue'.$x,$_REQUEST)) $this->qryArr['cv'.$x] = trim($_REQUEST['q_customvalue'.$x]);
 				if(array_key_exists('q_customcloseparen'.$x,$_REQUEST) && $_REQUEST['q_customcloseparen'.$x]) $this->qryArr['ccp'.$x] = $_REQUEST['q_customcloseparen'.$x];
 			}
 			if(array_key_exists('orderby',$_REQUEST)) $this->qryArr['orderby'] = trim($_REQUEST['orderby']);
@@ -302,7 +285,7 @@ class OccurrenceEditorManager {
 							$this->otherCatNumIsNum = true;
 							if(substr($v,0,1) == '0'){
 								//Add value with left padded zeros removed
-								$ocnInFrag[] = ltrim($vStr,0);
+								$ocnInFrag[] = ltrim($v,0);
 							}
 						}
 					}
@@ -432,16 +415,6 @@ class OccurrenceEditorManager {
 				$sqlWhere .= 'AND (o.recordEnteredBy = "'.$this->cleanInStr($this->qryArr['eb']).'") ';
 			}
 		}
-
-		// Adds modifiedby to the where clause
-		if(array_key_exists('mb',$this->qryArr)){
-			if(strtolower($this->qryArr['mb']) == 'is null'){
-				$sqlWhere .= 'AND (user.username IS NULL) ';
-			}
-			else{
-				$sqlWhere .= 'AND (user.username = "'.$this->cleanInStr($this->qryArr['mb']).'") ';
-			}
-		}
 		if(array_key_exists('de',$this->qryArr)){
 			$de = $this->cleanInStr($this->qryArr['de']);
 			if(preg_match('/^>{1}.*\s{1,3}AND\s{1,3}<{1}.*/i',$de)){
@@ -501,7 +474,7 @@ class OccurrenceEditorManager {
 		}
 		//Custom search fields
 		$customWhere = '';
-		for($x=1;$x<9;$x++){
+		for($x=1; $x<9; $x++){
 			$cao = (array_key_exists('cao'.$x,$this->qryArr)?$this->cleanInStr($this->qryArr['cao'.$x]):'');
             $cop = (array_key_exists('cop'.$x,$this->qryArr)?$this->cleanInStr($this->qryArr['cop'.$x]):'');
 			$customField = (array_key_exists('cf'.$x,$this->qryArr)?$this->cleanInStr($this->qryArr['cf'.$x]):'');
@@ -516,21 +489,21 @@ class OccurrenceEditorManager {
 				}
 				elseif($customField == 'username'){
 					//Used when Modified By comes from custom field search within basic query form
-					$customField = 'ul.username';
+					$customField = 'u.username';
 				}
 				else{
 					$customField = 'o.'.$customField;
 				}
 				if($customField == 'o.otherCatalogNumbers'){
 					$customWhere .= $cao.' ('.substr($this->setCustomSqlFragment($customField, $customTerm, $customValue, $cao, $cop, $ccp),3).' ';
-					if($customTerm != 'NOT EQUALS' && $customTerm != 'NOT LIKE'){
+					if($customTerm != 'NOT_EQUALS' && $customTerm != 'NOT_LIKE'){
 						$caoOverride = 'OR';
 						if($customTerm == 'NULL') $caoOverride = 'AND';
 						$customWhere .= $this->setCustomSqlFragment('id.identifierValue', $customTerm, $customValue, $caoOverride, $cop, $ccp);
 					}
 					else{
 						$customWhere .= 'AND o.occid NOT IN(SELECT occid FROM omoccuridentifiers WHERE identifierValue ';
-						if($customTerm == 'NOT LIKE') $customWhere .= 'NOT LIKE';
+						if($customTerm == 'NOT_LIKE') $customWhere .= 'NOT_LIKE';
 						else $customWhere .= '!=';
 						$customWhere .= ' "'.$this->cleanInStr($customValue).'")';
 					}
@@ -563,22 +536,22 @@ class OccurrenceEditorManager {
 		elseif($customTerm == 'NOTNULL'){
 			$sqlFrag .= $cao.($cop?' '.$cop:'').' ('.$customField.' IS NOT NULL) '.($ccp?$ccp.' ':'');
 		}
-		elseif($customTerm == 'NOT EQUALS' && $customValue){
+		elseif($customTerm == 'NOT_EQUALS'){
 			if(!is_numeric($customValue)) $customValue = '"'.$customValue.'"';
 			$sqlFrag .= $cao.($cop?' '.$cop:'').' (('.$customField.' != '.$customValue.') OR ('.$customField.' IS NULL)) '.($ccp?$ccp.' ':'');
 		}
-		elseif($customTerm == 'GREATER' && $customValue){
+		elseif($customTerm == 'GREATER'){
 			if(!is_numeric($customValue)) $customValue = '"'.$customValue.'"';
 			$sqlFrag .= $cao.($cop?' '.$cop:'').' ('.$customField.' > '.$customValue.') '.($ccp?$ccp.' ':'');
 		}
-		elseif($customTerm == 'LESS' && $customValue){
+		elseif($customTerm == 'LESS'){
 			if(!is_numeric($customValue)) $customValue = '"'.$customValue.'"';
 			$sqlFrag .= $cao.($cop?' '.$cop:'').' ('.$customField.' < '.$customValue.') '.($ccp?$ccp.' ':'');
 		}
 		elseif($customTerm == 'LIKE' && $customValue){
 			$sqlFrag .= $cao.($cop?' '.$cop:'').' ('.$customField.' LIKE "%'.trim($customValue,'%').'%") '.($ccp?$ccp.' ':'');
 		}
-		elseif($customTerm == 'NOT LIKE' && $customValue){
+		elseif($customTerm == 'NOT_LIKE' && $customValue){
 			$sqlFrag .= $cao.($cop?' '.$cop:'').' (('.$customField.' NOT LIKE "%'.trim($customValue,'%').'%") OR ('.$customField.' IS NULL)) '.($ccp?$ccp.' ':'');
 		}
 		elseif($customTerm == 'STARTS' && $customValue){
@@ -616,12 +589,7 @@ class OccurrenceEditorManager {
 			else{
 				$sqlOrderBy = $orderBy;
 			}
-			// // Allows the inclusion of a modified by column (which comes from different tables)
-			if($sqlOrderBy == "recordmodifiedby") {
-				$sql .= 'ORDER BY ('.$sqlOrderBy.') '.$this->qryArr['orderbydir'].' ';
-			} else if($sqlOrderBy) {
-				$sql .= 'ORDER BY (o.'.$sqlOrderBy.') '.$this->qryArr['orderbydir'].' ';
-			}
+			if($sqlOrderBy) $sql .= 'ORDER BY (o.'.$sqlOrderBy.') '.$this->qryArr['orderbydir'].' ';
 		}
 	}
 
@@ -694,7 +662,6 @@ class OccurrenceEditorManager {
 		$localIndex = false;
 		$sqlFrag = '';
 		if($this->occid && !$this->direction){
-			$this->addTableJoins($sqlFrag);
 			$sqlFrag .= 'WHERE (o.occid = '.$this->occid.')';
 		}
 		elseif($this->sqlWhere){
@@ -717,7 +684,7 @@ class OccurrenceEditorManager {
 			}
 		}
 		if($sqlFrag){
-			$sql = 'SELECT DISTINCT o.occid, o.collid, lastuser.username as recordmodifiedby, o.'.implode(',o.',array_keys($this->fieldArr['omoccurrences'])).', datelastmodified FROM omoccurrences o '.$sqlFrag;
+			$sql = 'SELECT DISTINCT o.occid, o.collid, o.'.implode(',o.',array_keys($this->fieldArr['omoccurrences'])).', datelastmodified FROM omoccurrences o '.$sqlFrag;
 			$previousOccid = 0;
 			$rs = $this->conn->query($sql);
 			$rsCnt = 0;
@@ -764,21 +731,6 @@ class OccurrenceEditorManager {
 
 	private function addTableJoins(&$sql){
 
-		// Allows the inclusion of a last modified by column
-		// NB: Is this the the most efficient query? Another option, below
-		$sql .=	'LEFT JOIN omoccuredits as lastedit ON o.occid = lastedit.occid AND lastedit.initialtimestamp = (SELECT MAX(initialtimestamp) FROM omoccuredits oe WHERE oe.occid = o.occid)';
-		// This doesn't work, apparently o.datelastmodified is sometimes not modified by users, leading to blank last modified by fields
-		//$sql .=	'LEFT JOIN omoccuredits as lastedit ON o.occid = lastedit.occid AND o.datelastmodified = lastedit.initialtimestamp ';
-		$sql .= 'LEFT JOIN userlogin as lastuser ON lastedit.uid = lastuser.uid ';
-		// A single join alternative
-		//$sql .= 'LEFT JOIN userlogin as lastuser ON (SELECT oe.uid FROM omoccuredits oe WHERE oe.occid = o.occid ORDER BY oe.initialtimestamp DESC LIMIT 1) = lastuser.uid ';
-
-		// Allows searching for records modified by a user
-		if(array_key_exists('mb',$this->qryArr)){
-			$sql .=	'LEFT JOIN omoccuredits as edits ON o.occid = edits.occid ';
-			$sql .= 'LEFT JOIN userlogin as user ON edits.uid = user.uid ';
-		}
-
 		if(strpos($this->sqlWhere,'ocr.rawstr')){
 			if(strpos($this->sqlWhere,'ocr.rawstr IS NULL') && array_key_exists('io',$this->qryArr)){
 				$sql .= 'INNER JOIN images i ON o.occid = i.occid LEFT JOIN specprocessorrawlabels ocr ON i.imgid = ocr.imgid ';
@@ -799,8 +751,8 @@ class OccurrenceEditorManager {
 		if(strpos($this->sqlWhere,'id.identifierValue')){
 			$sql .= 'LEFT JOIN omoccuridentifiers id ON o.occid = id.occid ';
 		}
-		if(strpos($this->sqlWhere,'ul.username')){
-			$sql .= 'LEFT JOIN omoccuredits ome ON o.occid = ome.occid LEFT JOIN userlogin ul ON ome.uid = ul.uid ';
+		if(strpos($this->sqlWhere,'u.username')){
+			$sql .= 'LEFT JOIN omoccuredits ome ON o.occid = ome.occid LEFT JOIN users u ON ome.uid = u.uid ';
 		}
 		if(strpos($this->sqlWhere,'exn.ometid')){
 			$sql .= 'INNER JOIN omexsiccatiocclink exocc ON o.occid = exocc.occid INNER JOIN omexsiccatinumbers exn ON exocc.omenid = exn.omenid ';
@@ -1203,7 +1155,8 @@ class OccurrenceEditorManager {
 		global $LANG;
 		$status = $LANG['SUCCESS_NEW_OCC_SUBMITTED'];
 		if($postArr){
-			$sql = 'INSERT INTO omoccurrences(collid, '.implode(',',array_keys($this->fieldArr['omoccurrences'])).') VALUES ('.$postArr['collid'];
+			$guid = UuidFactory::getUuidV4();
+			$sql = 'INSERT INTO omoccurrences(collid, recordID, '.implode(',',array_keys($this->fieldArr['omoccurrences'])).') VALUES ('.$postArr['collid'].', "'.$guid.'"';
 			//if(array_key_exists('cultivationstatus',$postArr) && $postArr['cultivationstatus']) $postArr['cultivationstatus'] = $postArr['cultivationstatus'];
 			//if(array_key_exists('localitysecurity',$postArr) && $postArr['localitysecurity']) $postArr['localitysecurity'] = $postArr['localitysecurity'];
 			if(!isset($postArr['dateentered']) || !$postArr['dateentered']) $postArr['dateentered'] = date('Y-m-d H:i:s');
@@ -1228,11 +1181,6 @@ class OccurrenceEditorManager {
 				$this->occid = $this->conn->insert_id;
 				//Update collection stats
 				$this->conn->query('UPDATE omcollectionstats SET recordcnt = recordcnt + 1 WHERE collid = '.$this->collId);
-				//Create and insert Symbiota GUID (UUID)
-				$guid = UuidFactory::getUuidV4();
-				if(!$this->conn->query('INSERT INTO guidoccurrences(guid,occid) VALUES("'.$guid.'",'.$this->occid.')')){
-					$status .= '('.$LANG['GUID_FAILED'].') ';
-				}
 				//Deal with identifiers
 				if(isset($postArr['idvalue'])) $this->updateIdentifiers($postArr);
 				//Deal with paleo
@@ -1452,10 +1400,11 @@ class OccurrenceEditorManager {
 				//Archive complete occurrence record
 				$archiveArr['dateDeleted'] = date('r').' by '.$USER_DISPLAY_NAME;
 				$archiveObj = json_encode($archiveArr);
-				$sqlArchive = 'UPDATE guidoccurrences '.
-					'SET archivestatus = 1, archiveobj = "'.$this->cleanInStr($this->encodeStrTargeted($archiveObj,'utf8',$CHARSET)).'" '.
-					'WHERE (occid = '.$delOccid.')';
-				//echo $sqlArchive;
+				$sqlArchive = 'INSERT INTO omoccurarchive(archiveobj, occid, catalogNumber, occurrenceID, recordID) '.
+					'VALUES ("'.$this->cleanInStr($this->encodeStrTargeted($archiveObj,'utf8',$CHARSET)).'", '.$delOccid.','.
+					(isset($archiveArr['catalogNumber']) && $archiveArr['catalogNumber']?'"'.$this->cleanInStr($archiveArr['catalogNumber']).'"':'NULL').', '.
+					(isset($archiveArr['occurrenceID']) && $archiveArr['occurrenceID']?'"'.$this->cleanInStr($archiveArr['occurrenceID']).'"':'NULL').', '.
+					(isset($archiveArr['recordID']) && $archiveArr['recordID']?'"'.$this->cleanInStr($archiveArr['recordID']).'"':'NULL').')';
 				$this->conn->query($sqlArchive);
 			}
 
@@ -1882,10 +1831,9 @@ class OccurrenceEditorManager {
 	public function getIdentificationRanking(){
 		//Get Identification ranking
 		$retArr = array();
-		$sql = 'SELECT v.ovsid, v.ranking, v.notes, l.username '.
-			'FROM omoccurverification v LEFT JOIN userlogin l ON v.uid = l.uid '.
+		$sql = 'SELECT v.ovsid, v.ranking, v.notes, u.username '.
+			'FROM omoccurverification v LEFT JOIN users u ON v.uid = u.uid '.
 			'WHERE v.category = "identification" AND v.occid = '.$this->occid;
-		//echo "<div>".$sql."</div>";
 		$rs = $this->conn->query($sql);
 		//There can only be one identification ranking per specimen
 		if($r = $rs->fetch_object()){
@@ -1913,50 +1861,41 @@ class OccurrenceEditorManager {
 		return $statusStr;
 	}
 
-	//Checklist voucher functions
-	public function getVoucherChecklists(){
-		$retArr = array();
-		$sql = 'SELECT c.clid, c.name FROM fmchecklists c INNER JOIN fmvouchers v ON c.clid = v.clid WHERE v.occid = '.$this->occid;
-		$rs = $this->conn->query($sql);
-		while($r = $rs->fetch_object()){
-			$retArr[$r->clid] = $r->name;
-		}
-		$rs->free();
-		asort($retArr);
-		return $retArr;
-	}
-
 	public function linkChecklistVoucher($clid,$tid){
 		global $LANG;
 		$status = '';
 		if(is_numeric($clid) && is_numeric($tid)){
 			//Check to see it the name is in the list, if not, add it
-			$clTid = 0;
-			$sqlCl = 'SELECT cl.tid '.
+			$clTaxaID = 0;
+			$sql = 'SELECT cl.clTaxaID '.
 				'FROM fmchklsttaxalink cl INNER JOIN taxstatus ts1 ON cl.tid = ts1.tid '.
 				'INNER JOIN taxstatus ts2 ON ts1.tidaccepted = ts2.tidaccepted '.
-				'WHERE (ts1.taxauthid = 1) AND (ts2.taxauthid = 1) AND (ts2.tid = '.$tid.') AND (cl.clid = '.$clid.')';
-			$rsCl = $this->conn->query($sqlCl);
-			//echo $sqlCl;
-			if($rowCl = $rsCl->fetch_object()){
-				$clTid = $rowCl->tid;
+				'WHERE (ts1.taxauthid = 1) AND (ts2.taxauthid = 1) AND (ts2.tid = ?) AND (cl.clid = ?)';
+			if($stmt = $this->conn->prepare($sql)){
+				$stmt->bind_param('ii', $tid, $clid);
+				$stmt->execute();
+				$stmt->bind_result($clTaxaID);
+				$stmt->fetch();
+				$stmt->close();
 			}
-			$rsCl->free();
-			if(!$clTid){
-				$sqlCl1 = 'INSERT INTO fmchklsttaxalink(clid, tid) VALUES('.$clid.','.$tid.') ';
-				if($this->conn->query($sqlCl1)){
-					$clTid = $tid;
-				}
-				else{
-					$status .= '('.$LANG['WARNING_ADD_SCINAME'].': '.$this->conn->error.'); ';
+			if(!$clTaxaID){
+				$sql = 'INSERT INTO fmchklsttaxalink(tid,clid) VALUES(?,?)';
+				if($stmt = $this->conn->prepare($sql)){
+					$stmt->bind_param('ii', $tid, $clid);
+					$stmt->execute();
+					if($stmt->affected_rows) $clTaxaID = $stmt->insert_id;
+					else $status .= '('.$LANG['WARNING_ADD_SCINAME'].': '.$stmt->error.'); ';
+					$stmt->close();
 				}
 			}
 			//Add voucher
-			if($clTid){
-				$sqlCl2 = 'INSERT INTO fmvouchers(occid,clid,tid) values('.$this->occid.','.$clid.','.$clTid.')';
-				//echo $sqlCl2;
-				if(!$this->conn->query($sqlCl2)){
-					$status .= '('.$LANG['WARNING_ADD_VOUCHER'].': '.$this->conn->error.'); ';
+			if($clTaxaID){
+				$sql = 'INSERT INTO fmvouchers(clTaxaID, occid) VALUES(?,?) ';
+				if($stmt = $this->conn->prepare($sql)){
+					$stmt->bind_param('ii', $clTaxaID, $this->occid);
+					$stmt->execute();
+					if(!$stmt->affected_rows) $status .= '('.$LANG['WARNING_ADD_VOUCHER'].': '.$stmt->error.'); ';
+					$stmt->close();
 				}
 			}
 		}
@@ -1967,7 +1906,7 @@ class OccurrenceEditorManager {
 		global $LANG;
 		$status = '';
 		if(is_numeric($clid)){
-			$sql = 'DELETE FROM fmvouchers WHERE clid = '.$clid.' AND occid = '.$this->occid;
+			$sql = 'DELETE v.* FROM fmvouchers v INNER JOIN fmchklsttaxalink c ON v.clTaxaID = c.clTaxaID WHERE c.clid = '.$clid.' AND v.occid = '.$this->occid;
 			if(!$this->conn->query($sql)){
 				$status = $LANG['ERROR_DELETING_VOUCHER'].': '.$this->conn->error;
 			}
@@ -2605,7 +2544,7 @@ class OccurrenceEditorManager {
 		return $newStr;
 	}
 
-	private function cleanRawFragment($str){
+	protected function cleanRawFragment($str){
 		$newStr = trim($str);
 		$newStr = $this->encodeStr($newStr);
 		$newStr = $this->conn->real_escape_string($newStr);
