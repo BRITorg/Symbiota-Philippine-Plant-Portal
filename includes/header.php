@@ -1,6 +1,9 @@
 <?php
-if($LANG_TAG == 'en' || !file_exists($SERVER_ROOT.'/content/lang/header.'.$LANG_TAG.'.php')) include_once($SERVER_ROOT.'/content/lang/header.en.php');
-else include_once($SERVER_ROOT.'/content/lang/header.'.$LANG_TAG.'.php');
+if($LANG_TAG == 'en' || !file_exists($SERVER_ROOT.'/content/lang/templates/header.' . $LANG_TAG . '.php'))
+	include_once($SERVER_ROOT . '/content/lang/templates/header.en.php');
+else include_once($SERVER_ROOT . '/content/lang/templates/header.' . $LANG_TAG . '.php');
+$SHOULD_USE_HARVESTPARAMS = $SHOULD_USE_HARVESTPARAMS ?? false;
+$collectionSearchPage = $SHOULD_USE_HARVESTPARAMS ? '/collections/index.php' : '/collections/search/index.php';
 ?>
 <div class="header-wrapper">
 	<header>
@@ -21,11 +24,6 @@ else include_once($SERVER_ROOT.'/content/lang/header.'.$LANG_TAG.'.php');
 					<?php
 				} else {
 					?>
-					<span>
-						<a href="#">
-							Contact Us
-						</a>
-					</span>
 					<span class="button button-secondary">
 						<a href="<?php echo $CLIENT_ROOT . "/profile/index.php?refurl=" . $_SERVER['SCRIPT_NAME'] . "?" . htmlspecialchars($_SERVER['QUERY_STRING'], ENT_QUOTES); ?>">
 							<?php echo (isset($LANG['H_LOGIN'])?$LANG['H_LOGIN']:'Login')?>
@@ -36,12 +34,12 @@ else include_once($SERVER_ROOT.'/content/lang/header.'.$LANG_TAG.'.php');
 				?>
 			</nav>
 			<div class="top-brand">
-				<a href="https://symbiota.org">
+				<!-- <a href="https://symbiota.org">
 					<img src="<?php echo $CLIENT_ROOT; ?>/images/layout/logo_symbiota.png" alt="Symbiota logo" width="100%">
-				</a>
+				</a>-->
 				<div class="brand-name">
 
-					<h1>Plants and Lichens of the Southern Philippines</h1>
+					<h1><?= $LANG['HOMEPAGE_HEADER'] ?></h1>
 
 				</div>
 			</div>
@@ -55,49 +53,49 @@ else include_once($SERVER_ROOT.'/content/lang/header.'.$LANG_TAG.'.php');
 				<ul class="menu">
 					<li>
 						<a href="<?php echo $CLIENT_ROOT; ?>/index.php">
-							<?php echo (isset($LANG['H_HOME'])?$LANG['H_HOME']:'Home'); ?>
+							<?= $LANG['H_HOME'] ?>
 						</a>
 					</li>
 					<li>
-						<a href="<?php echo $CLIENT_ROOT; ?>/collections/index.php">
-							<?php echo (isset($LANG['H_COLLECTIONS'])?$LANG['H_COLLECTIONS']:'Collections'); ?>
+						<a href="<?= $CLIENT_ROOT . $collectionSearchPage ?>">
+							<?= $LANG['H_COLLECTIONS'] ?>
 						</a>
 					</li>
 					<li>
 						<a href="<?php echo $CLIENT_ROOT; ?>/collections/map/index.php" target="_blank" rel="noopener noreferrer">
-							<?php echo (isset($LANG['H_MAP_SEARCH'])?$LANG['H_MAP_SEARCH']:'Map Search'); ?>
+							<?=$LANG['H_MAP_SEARCH'] ?>
 						</a>
 					</li>
 					<li>
 						<a href="<?php echo $CLIENT_ROOT; ?>/checklists/index.php">
-							<?php echo (isset($LANG['H_INVENTORIES'])?$LANG['H_INVENTORIES']:'Checklists'); ?>
+							<?= $LANG['H_INVENTORIES'] ?>
 						</a>
 					</li>
 					<li>
 						<a href="<?php echo $CLIENT_ROOT; ?>/imagelib/search.php">
-							<?php echo (isset($LANG['H_IMAGES'])?$LANG['H_IMAGES']:'Images'); ?>
+							<?= $LANG['H_IMAGES'] ?>
 						</a>
 					</li>
 					<li>
 						<a href="<?php echo $CLIENT_ROOT; ?>/includes/usagepolicy.php">
-							<?php echo (isset($LANG['H_DATA_USAGE'])?$LANG['H_DATA_USAGE']:'Data Use'); ?>
+							<?= $LANG['H_DATA_USAGE'] ?>
 						</a>
 					</li>
 					<li>
 						<a href="https://symbiota.org/docs" target="_blank" rel="noopener noreferrer">
-							<?php echo (isset($LANG['H_HELP'])?$LANG['H_HELP']:'Help'); ?>
+							<?= $LANG['H_HELP'] ?>
 						</a>
 					</li>
 					<li>
 						<a href='<?php echo $CLIENT_ROOT; ?>/sitemap.php'>
-							<?php echo (isset($LANG['H_SITEMAP'])?$LANG['H_SITEMAP']:'Sitemap'); ?>
+							<?= $LANG['H_SITEMAP'] ?>
 						</a>
 					</li>
 					<li>
 						<select onchange="setLanguage(this)">
 							<option value="en">English</option>
 							<option value="es" <?php echo ($LANG_TAG=='es'?'SELECTED':''); ?>>Espa&ntilde;ol</option>
-							<option value="fr" <?php echo ($LANG_TAG=='fr'?'SELECTED':''); ?>>Français</option>
+							<!--<option value="fr" <?php echo ($LANG_TAG=='fr'?'SELECTED':''); ?>>Français</option>-->
 						</select>
 					</li>
 				</ul>
