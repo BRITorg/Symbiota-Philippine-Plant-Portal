@@ -1,6 +1,8 @@
 <?php
+
 include_once($SERVER_ROOT.'/classes/Manager.php');
 include_once($SERVER_ROOT.'/classes/UuidFactory.php');
+include_once($SERVER_ROOT.'/utilities/SymbUtil.php');
 
 class OmCollections extends Manager{
 
@@ -14,10 +16,44 @@ class OmCollections extends Manager{
 		parent::__destruct();
 	}
 
+	// Needed to 
+	public function isCollUnique(String $collectionCode, String $institutionCode): bool {
+		global $CLIENT_ROOT;
+		try {
+			$sql = <<<'SQL'
+			SELECT collectionName, collid FROM omcollections 
+			WHERE collid != ? AND collectionCode = ? AND institutionCode = ?
+			SQL;
+			$result = SymbUtil::execute_query($this->conn, $sql, [$this->collid, $collectionCode, $institutionCode]);
+			if($col = $result->fetch_object()) {
+				$this->errorMessage = 'Error: Duplicate collection + institution code found in ' 
+					. '<a target="_blank" href="'
+					. $CLIENT_ROOT 
+					. '/collections/misc/collprofiles.php?collid='
+					. $col->collid 
+					. '">'
+					. $col->collectionName 
+					.'</a>';
+
+				return false;
+			} else {
+				return true;
+			}
+		} catch (\Throwable $th) {
+			error_log('error: Omcollections->isCollUnique: ' . $th->getMessage());
+			$this->errorMessage = $th->getMessage();
+			return false;
+		}
+	}
+
 	public function collectionUpdate($postArr){
 		$status = false;
 		if($this->collid){
 			$reqArr = $this->getRequestArr($postArr);
+			if(!$this->isCollUnique($reqArr['collectionCode'], $reqArr['institutionCode'])) {
+				return false;
+			}
+
 			//Update core fields
 			$sql = 'UPDATE omcollections '.
 				'SET institutionCode = ?, collectionCode = ?, collectionName = ?, collectionID = ?, fullDescription = ?, latitudeDecimal = ?, longitudeDecimal = ?, publishToGbif = ?, '.
@@ -135,8 +171,9 @@ class OmCollections extends Manager{
 			if(isset($postArr['sortSeq']) && is_numeric($postArr['sortSeq'])) $retArr['sortSeq'] = $postArr['sortSeq'];
 		}
 		if(isset($postArr['ccpk']) && is_numeric($postArr['ccpk'])) $retArr['ccpk'] = $postArr['ccpk'];
-		$retArr['securityKey'] = (isset($postArr['securityKey'])?$postArr['securityKey']:NULL);
-		$retArr['recordID'] = (isset($postArr['recordID'])?$postArr['recordID']:NULL);
+		$retArr['securityKey'] = (!empty($postArr['securityKey'])?$postArr['securityKey']:NULL);
+		$retArr['collectionGuid'] = (!empty($postArr['collectionGuid'])?$postArr['collectionGuid']:NULL);
+		if(!$retArr['collectionGuid'] && !empty($postArr['recordID'])) $retArr['collectionGuid'] = $postArr['recordID'];
 		return $retArr;
 	}
 
@@ -214,15 +251,19 @@ class OmCollections extends Manager{
 	}
 
 	private function updateContactJson($contactArr){
+		$status = false;
 		if($this->collid){
-			$sql = 'UPDATE omcollections SET contactJson = "'.$this->cleanInStr(json_encode($contactArr)).'" WHERE collid = '.$this->collid;
-			if(!$this->conn->query($sql)){
-				$this->errorMessage = 'ERROR updating contact: '.$this->conn->error;
-				return false;
+			$contactStr = json_encode(array_values($contactArr));
+			$sql = 'UPDATE omcollections SET contactJson = ? WHERE collid = '.$this->collid;
+			if($stmt = $this->conn->prepare($sql)){
+				$stmt->bind_param('s', $contactStr);
+				$stmt->execute();
+				if($stmt->affected_rows) $status = true;
+				elseif($stmt->error) $this->errorMessage = $stmt->error;
+				$stmt->close();
 			}
-			return true;
 		}
-		return false;
+		return $status;
 	}
 
 	private function getContactArr(){
@@ -288,9 +329,8 @@ class OmCollections extends Manager{
 	public function removeAddress($removeIID){
 		$status = false;
 		if($this->collid && is_numeric($removeIID)){
-			$con = MySQLiConnectionFactory::getCon("write");
-			$sql = 'UPDATE omcollections SET iid = NULL '.
-				'WHERE collid = '.$this->collid.' AND iid = '.$removeIID;
+			$con = MySQLiConnectionFactory::getCon('write');
+			$sql = 'UPDATE omcollections SET iid = NULL WHERE collid = '.$this->collid.' AND iid = '.$removeIID;
 			if($con->query($sql)){
 				$status = true;
 			}
