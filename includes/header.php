@@ -40,7 +40,9 @@ else include_once($SERVER_ROOT.'/content/lang/header.'.$LANG_TAG.'.php');
 					<img src="<?php echo $CLIENT_ROOT; ?>/images/layout/logo_symbiota.png" alt="Symbiota logo" width="100%">
 				</a>
 				<div class="brand-name">
+
 					<h1>Plants and Lichens of the Southern Philippines</h1>
+
 				</div>
 			</div>
 		</div>
