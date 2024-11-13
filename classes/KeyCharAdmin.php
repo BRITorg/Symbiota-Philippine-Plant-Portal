@@ -195,13 +195,14 @@ class KeyCharAdmin{
 				$rs->free();
 			}
 			$csName = $postArr['charstatename'];
-			$glossID = $postArr['glossid'];
+			$glossID = null;
+			if(isset($postArr['glossid']) && is_numeric($postArr['glossid'])) $glossID = $postArr['glossid'];
 			$description = $postArr['description'];
 			$notes = $postArr['notes'];
 			$sortSequence = $postArr['sortsequence'];
 			$sql = 'INSERT INTO kmcs(cid,cs,charstatename,implicit,glossid,description,notes,sortsequence,enteredby) '.
 				'VALUES('.$this->cid.',"'.$csValue.'","'.$this->cleanInStr($csName).'",1,'.
-				(is_numeric($glossID)?$glossID:'NULL').','.
+				($glossID?$glossID:'NULL').','.
 				($description?'"'.$this->cleanInStr($description).'"':'NULL').','.
 				($notes?'"'.$this->cleanInStr($notes).'"':'NULL').','.
 				(is_numeric($sortSequence)?$this->cleanInStr($sortSequence):100).',"'.$un.'") ';
@@ -280,7 +281,7 @@ class KeyCharAdmin{
 		global $PARAMS_ARR;
 		$statusStr = '';
 		if(is_numeric($formArr['cid']) && is_numeric($formArr['cs'])){
-	 		$imageRootPath = $GLOBALS["imageRootPath"];
+			$imageRootPath = $GLOBALS['IMAGE_ROOT_PATH'];
 			if(substr($imageRootPath,-1) != "/") $imageRootPath .= "/";
 			if(file_exists($imageRootPath)){
 				$imageRootPath .= 'ident/';
@@ -296,7 +297,7 @@ class KeyCharAdmin{
 					}
 				}
 				//Create url prefix
-				$imageRootUrl = $GLOBALS["imageRootUrl"];
+				$imageRootUrl = $GLOBALS['IMAGE_ROOT_URL'];
 				if(substr($imageRootUrl,-1) != "/") $imageRootUrl .= "/";
 				$imageRootUrl .= 'ident/csimgs/';
 
@@ -380,7 +381,7 @@ class KeyCharAdmin{
 	public function deleteCsImage($csImgId){
 		$statusStr = 'SUCCESS: image uploaded successful';
 		//Remove image from file system
-	 	$imageRootPath = $GLOBALS["imageRootPath"];
+	 	$imageRootPath = $GLOBALS['IMAGE_ROOT_PATH'];
 		if(substr($imageRootPath,-1) != "/") $imageRootPath .= "/";
 		$imageRootPath .= 'ident/csimgs/';
 		$sql = 'SELECT url FROM kmcsimages WHERE csimgid = '.$csImgId;
@@ -497,10 +498,13 @@ class KeyCharAdmin{
 		$sql = 'SELECT glossid, term, language FROM glossary';
 		$rs = $this->conn->query($sql);
 		while($r = $rs->fetch_object()){
-			$retArr[$r->glossid]['term'] = $r->term;
-			$retArr[$r->glossid]['lang'] = $r->language;
+			//$k variable is needed to so that list can be alphabetical even when html tags (e.g. italics) are embedded into the terms
+			$k = strip_tags(strtolower($r->term));
+			$retArr[$k][$r->glossid]['term'] = $r->term;
+			$retArr[$k][$r->glossid]['lang'] = $r->language;
 		}
 		$rs->free();
+		ksort($retArr);
 		return $retArr;
 	}
 
@@ -530,12 +534,12 @@ class KeyCharAdmin{
 
 	public function setLangId($lang=''){
 		if(!$lang){
-			if($GLOBALS['defaultLang']) $lang = $GLOBALS['defaultLang'];
+			if($GLOBALS['DEFAULT_LANG']) $lang = $GLOBALS['DEFAULT_LANG'];
 			else $lang = 'English';
 		}
 		if(is_numeric($lang)) $this->langId = $lang;
 		else{
-			$sql = 'SELECT langid FROM adminlanguages WHERE langname = "'.$lang.'" OR iso639_1 = "'.$lang.'" OR iso639_2 = "'.$lang.'" ';
+			$sql = 'SELECT langid FROM adminlanguages WHERE langname = "'.$this->cleanInStr($lang).'" OR iso639_1 = "'.$this->cleanInStr($lang).'" OR iso639_2 = "'.$this->cleanInStr($lang).'" ';
 			$rs = $this->conn->query($sql);
 			if($r = $rs->fetch_object()){
 				$this->langId = $r->langid;
@@ -546,8 +550,11 @@ class KeyCharAdmin{
 
 	//General functions
 	private function cleanOutStr($str){
-		$newStr = str_replace('"',"&quot;",$str);
-		$newStr = str_replace("'","&apos;",$newStr);
+		$newStr = $str;
+		if(isset($str)){
+			$newStr = str_replace('"',"&quot;",$str);
+			$newStr = str_replace("'","&apos;",$newStr);
+		}
 		//$newStr = $this->conn->real_escape_string($newStr);
 		return $newStr;
 	}
