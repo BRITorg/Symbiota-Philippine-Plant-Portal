@@ -5,8 +5,6 @@ Language: Español (Spanish)
 ------------------
 */
 
-$LANG['HOMEPAGE_HEADER'] = 'Plantas y Líquenes del sur de Filipinas';
-
 //Various plugin variables
 $LANG['QSEARCH_SEARCH'] = 'B&uacute;squeda de especies';
 $LANG['QSEARCH_SEARCH_BUTTON'] = 'B&uacute;squeda';
