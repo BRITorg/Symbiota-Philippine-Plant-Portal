@@ -634,9 +634,11 @@ class OccurrenceTaxaManager {
 	protected function cleanInputStr($str){
 		if(!is_string($str) && !is_numeric($str) && !is_bool($str)) return '';
 		if(preg_match('/^\d+\'+$/', $str)) return 0;	//SQL Injection attempt, thus set to return nothing rather than a query that puts a load on the db server
+		$str = str_replace('_', ' ',$str);
 		$str = preg_replace('/%%+/', '%',$str);
 		$str = preg_replace('/^[\s%]+/', '',$str);
 		$str = trim($str,' ,;');
+		$str = preg_replace('/\s\s+/', ' ',$str);
 		if($str == '%') $str = '';
 		$str = strip_tags($str);
 		//$str = htmlspecialchars($str, ENT_NOQUOTES | ENT_SUBSTITUTE | ENT_HTML401);

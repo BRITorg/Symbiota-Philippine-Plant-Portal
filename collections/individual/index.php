@@ -178,6 +178,7 @@ $traitArr = $indManager->getTraitArr();
 	<link href="<?= $CSS_BASE_PATH ?>/symbiota/collections/individual/popup.css" type="text/css" rel="stylesheet" >
 	<script src="<?= $CLIENT_ROOT; ?>/js/jquery-3.7.1.min.js" type="text/javascript"></script>
 	<script src="<?= $CLIENT_ROOT; ?>/js/jquery-ui.min.js" type="text/javascript"></script>
+	<script src="<?php echo $CLIENT_ROOT . '/collections/individual/domManipulationUtils.js'; ?>" type="text/javascript"></script>
 	<script type="text/javascript">
 		var tabIndex = <?= $tabIndex; ?>;
 		var map;
@@ -324,6 +325,9 @@ $traitArr = $indManager->getTraitArr();
 		}
 		#exsiccati-div{ clear: both; }
 		#rights-div{ clear: both; }
+		.danger{
+			color: var(--danger-color);
+		}
 		<?php
 		if($shouldUseMinimalMapHeader){
 			?>
@@ -514,11 +518,11 @@ $traitArr = $indManager->getTraitArr();
 								?>
 							</div>
 							<?php if($occArr['dateidentified']): ?>
-								<div id="identby-div" class="identby-div bottom-breathing-room-rel-sm">
-								<?php
-									echo '<label>'.$LANG['DATE_DET']  . ': '. '</label>' . $occArr['dateidentified'];
-								?>
-							</div>
+								<div id="identdate-div" class="identby-div bottom-breathing-room-rel-sm">
+									<?php
+										echo '<label>'.$LANG['DATE_DET']  . ': '. '</label>' . $occArr['dateidentified'];
+									?>
+								</div>
 							<?php endif; ?>
 							<?php
 						}
@@ -623,7 +627,7 @@ $traitArr = $indManager->getTraitArr();
 							<div id="typestatus-div" class="bottom-breathing-room-rel-sm">
 								<?php
 								echo '<label>'.$LANG['TYPE_STATUS'].': </label>';
-								echo $occArr['typestatus'];
+								echo '<span class="danger">' . $occArr['typestatus'] . '</span>';
 								?>
 							</div>
 							<?php
@@ -1316,33 +1320,31 @@ $traitArr = $indManager->getTraitArr();
 						}
 					}
 					else echo '<div class="title2-div left-breathing-room-rel top-breathing-room-rel bottom-breathing-room" >'.$LANG['NO_COMMENTS'].'</div>';
-					?>
-						<?php
-						if($SYMB_UID){
-							?>
-							<form class="left-breathing-room-rel" name="commentform" action="index.php" method="post" onsubmit="return verifyCommentForm(this);">
-								<label for="commentstr"><?php echo $LANG['NEW_COMMENT']; ?></label>
-								<textarea name="commentstr" id="commentstr" rows="8" style="width:98%;"></textarea>
-								<div class="bottom-breathing-room">
-									<input name="occid" type="hidden" value="<?php echo $occid; ?>" />
-									<input name="tabindex" type="hidden" value="<?php echo $commentTabIndex; ?>" />
-									<button type="submit" name="formsubmit" value="submitComment"><?php echo $LANG['SUBMIT_COMMENT']; ?></button>
-								</div>
-								<div>
-									<?php echo $LANG['MESSAGE_WARNING']; ?>
-								</div>
-							</form>
-							<?php
-						}
-						else{
-							echo '<div style="margin:10px;">';
-							echo '<a href="../../profile/index.php?refurl=../collections/individual/index.php?tabindex=2&occid=' . $occid . '">';
-							echo $LANG['LOGIN'];
-							echo '</a> ';
-							echo $LANG['TO_LEAVE_COMMENT'];
-							echo '</div>';
-						}
+					if($SYMB_UID){
 						?>
+						<form class="left-breathing-room-rel" name="commentform" action="index.php" method="post" onsubmit="return verifyCommentForm(this);">
+							<label for="commentstr"><?php echo $LANG['NEW_COMMENT']; ?></label>
+							<textarea name="commentstr" id="commentstr" rows="8" style="width:98%;"></textarea>
+							<div class="bottom-breathing-room">
+								<input name="occid" type="hidden" value="<?php echo $occid; ?>" />
+								<input name="tabindex" type="hidden" value="<?php echo $commentTabIndex; ?>" />
+								<button type="submit" name="formsubmit" value="submitComment"><?php echo $LANG['SUBMIT_COMMENT']; ?></button>
+							</div>
+							<div>
+								<?php echo $LANG['MESSAGE_WARNING']; ?>
+							</div>
+						</form>
+						<?php
+					}
+					else{
+						echo '<div style="margin:10px;">';
+						echo '<a href="../../profile/index.php?refurl=../collections/individual/index.php?tabindex=2&occid=' . $occid . '">';
+						echo $LANG['LOGIN'];
+						echo '</a> ';
+						echo $LANG['TO_LEAVE_COMMENT'];
+						echo '</div>';
+					}
+					?>
 				</div>
 				<?php
 				if($traitArr){
