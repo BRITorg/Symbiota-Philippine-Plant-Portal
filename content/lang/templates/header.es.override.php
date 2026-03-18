@@ -9,6 +9,6 @@
  e.g. override: $LANG['H_COLLECTIONS'] = 'Search Lichen Collections';
 */
 
-
+$LANG['HOMEPAGE_HEADER'] = 'Plantas y Líquenes del Sur de Filipinas';
 
 ?>
