@@ -2,7 +2,8 @@
 include_once(__DIR__ . '/../../../config/symbini.php');
 global $SERVER_ROOT, $IS_ADMIN, $USER_RIGHTS;
 
-include_once($SERVER_ROOT.'/classes/OccurrenceEditorManager.php');
+include_once($SERVER_ROOT . '/classes/OccurrenceEditorManager.php');
+include_once($SERVER_ROOT . '/classes/GeographicThesaurus.php');
 
 $collid = array_key_exists('collid',$_REQUEST);
 $responseArr = array();
@@ -21,6 +22,10 @@ if($collid){
 		$occurrenceEditor = new OccurrenceEditorManager();
 		$occurrenceEditor->setCollId($_REQUEST['collid']);
 
+		if((!isset($_REQUEST['country']) || !$_REQUEST['country']) && isset($_REQUEST['stateprovince']) && $_REQUEST['stateprovince']){
+			$_REQUEST['country'] = GeographicThesaurus::getCountryByState($_REQUEST['stateprovince']);
+		}
+
 		if(array_key_exists('catalognumber',$_REQUEST) && $occurrenceEditor->catalogNumberExists($_REQUEST['catalognumber'])){
 			$responseArr['occid'] = $occurrenceEditor->getOccId();
 			if($_REQUEST['addaction'] == '1'){
@@ -31,7 +36,7 @@ if($collid){
 			elseif($_REQUEST['addaction'] == '2'){
 				$responseArr['action'] = 'update';
 				$responseArr['status'] = 'true';
-				if(!$occurrenceEditor->editOccurrence($_REQUEST)){
+				if(!$occurrenceEditor->editOccurrence($_REQUEST, $isEditor)){
 					$responseArr['status'] = 'false';
 					$responseArr['error'] = $occurrenceEditor->getErrorStr();
 				}

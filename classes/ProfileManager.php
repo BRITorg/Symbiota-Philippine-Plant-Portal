@@ -4,6 +4,7 @@ include_once('Person.php');
 include_once('utilities/Encryption.php');
 include_once('utilities/GeneralUtil.php');
 include_once('utilities/QueryUtil.php');
+include_once('utilities/Sanitize.php');
 @include_once 'Mail.php';
 
 class ProfileManager extends Manager{
@@ -124,7 +125,29 @@ class ProfileManager extends Manager{
 			}
 			else echo 'error preparing statement: '.$this->conn->error;
 		}
+		if(!$status) $this->checkResetRequired();
 		return $status;
+	}
+
+	private function checkResetRequired(){
+		//Check to see if password field was set to NULL, which forces a password reset
+		try {
+			$sql = 'SELECT uid, firstname, username, password FROM users WHERE password IS NULL AND ';
+			if($this->uid) {
+				$sql .= '(uid = ?)';
+				$params = [ $this->uid ];
+			} else {
+				$sql .= '(username = ? OR email = ?)';
+				$params = [ $this->userName, $this->userName ];
+			}
+			$rs = QueryUtil::executeQuery($this->conn, $sql, $params);
+			$user = $rs->fetch_object();
+			if($user){
+				$this->errorMessage = 'PASSWORD_RESET_REQUIRED';
+			}
+		} catch (Exception $e) {
+			return false;
+		}
 	}
 
 	private function authenticateUsingPasswordBcrypt($pwdStr){
@@ -145,10 +168,10 @@ class ProfileManager extends Manager{
 				$sql,
 				$params
 			);
-
 			$user = $rs->fetch_object();
 
-			if(!$user->password) {
+			if(empty($user->password)) {
+				if(!empty($user->username)) $this->errorMessage = 'PASSWORD_RESET_REQUIRED';
 				return false;
 			}
 
@@ -459,14 +482,16 @@ class ProfileManager extends Manager{
 		return $status;
 	}
 
-	private function generateNewPassword(){
-		// generate new random password
-		$newPassword = "";
-		$alphabet = str_split("0123456789abcdefghijklmnopqrstuvwxyz");
-		for($i = 0; $i<10; $i++) {
-			$newPassword .= $alphabet[rand(0,count($alphabet)-1)];
+	private function generateNewPassword(int $length = 13): string {
+		$alphabet = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ!#%&';
+		$alphabetLength = strlen($alphabet);
+
+		$password = '';
+		for ($i = 0; $i < $length; $i++) {
+			$password .= $alphabet[random_int(0, $alphabetLength - 1)];
 		}
-		return $newPassword;
+
+		return $password;
 	}
 
 	/**
@@ -513,16 +538,23 @@ class ProfileManager extends Manager{
 		$initialDynamicProperties['accessibilityPref'] = $isAccessiblePreferred === "1" ? true : false;
 		$jsonDynProps = json_encode($initialDynamicProperties);
 
-		$sql = 'INSERT INTO users(username, password, email, firstName, lastName, title, institution, country, city, state, zip, guid, dynamicProperties) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)';
-		$hash = $this->hash($pwd);
+		$sql = 'INSERT INTO users(username, password, email, firstName, lastName, title, institution, country, city, state, zip, guid, dynamicProperties) VALUES(?,CONCAT(\'*\', UPPER(SHA1(UNHEX(SHA1(?))))),?,?,?,?,?,?,?,?,?,?,?)';
 
-		if(!$hash) {
-			$this->errorMessage = 'ERROR inserting new user: Failed to encrypt password';
+		$hash = $pwd;
+
+		if($GLOBALS['USE_BCRYPT'] ?? false) {
+			$sql = 'INSERT INTO users(username, password, email, firstName, lastName, title, institution, country, city, state, zip, guid, dynamicProperties) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)';
+			$hash = $this->hash($pwd);
+
+			if(!$hash) {
+				$this->errorMessage = 'ERROR inserting new user: Failed to encrypt password';
+				return $status;
+			}
 		}
 
 		$this->resetConnection();
 		if($stmt = $this->conn->prepare($sql)) {
-			$stmt->bind_param('sssssssssssss', $this->userName, $this->hash($pwd), $email, $firstName, $lastName, $title, $institution, $country, $city, $state, $zip, $guid, $jsonDynProps);
+			$stmt->bind_param('sssssssssssss', $this->userName, $hash, $email, $firstName, $lastName, $title, $institution, $country, $city, $state, $zip, $guid, $jsonDynProps);
 			$stmt->execute();
 			if($stmt->affected_rows){
 				$this->uid = $stmt->insert_id;
@@ -540,6 +572,9 @@ class ProfileManager extends Manager{
 		else $this->errorMessage = 'ERROR inserting new user: '.$this->conn->error;
 
 		return $status;
+	}
+
+	private function registerOld(array $userOptions) {
 	}
 
 	public function lookupUserName($emailAddr){
@@ -1116,10 +1151,10 @@ class ProfileManager extends Manager{
 		$sql = 'SELECT collid, institutioncode, collectioncode, collectionname, colltype FROM omcollections WHERE collid IN('.$collidStr.') ORDER BY collectionname';
 		if($rs = $this->conn->query($sql)){
 			while($r = $rs->fetch_object()){
-				$retArr[$r->collid]['collectionname'] = $r->collectionname;
-				$retArr[$r->collid]['collectioncode'] = $r->collectioncode;
-				$retArr[$r->collid]['institutioncode'] = $r->institutioncode;
-				$retArr[$r->collid]['colltype'] = $r->colltype;
+				$retArr[$r->collid]['collectionname'] = Sanitize::outString($r->collectionname);
+				$retArr[$r->collid]['collectioncode'] = Sanitize::outString($r->collectioncode);
+				$retArr[$r->collid]['institutioncode'] = Sanitize::outString($r->institutioncode);
+				$retArr[$r->collid]['colltype'] = Sanitize::outString($r->colltype);
 			}
 			$rs->free();
 		}
